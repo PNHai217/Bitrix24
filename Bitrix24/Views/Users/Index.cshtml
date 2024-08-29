@@ -1,0 +1,168 @@
+﻿@model List<Bitrix24.Models.User>
+
+<!DOCTYPE html>
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="~/css/site.css" />
+        <title>Users</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<head>
+    <style>
+        .highlight {
+            background-color: #9ad1e6; /* Màu nền khi được highlight */
+        }
+        body{
+            background-color: #f7f9fa;
+        }
+        h1{
+            text-align:center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Users List</h1>
+    <div class="container">
+        <div class="mb-4">
+            <button id="refreshBtn" class="btn btn-outline-primary btn-icon-text">Refresh</button>
+            <button id="viewBtn" class="btn btn-outline-warning btn-icon-text" data-toggle="modal" data-target="#userModal">View Employee</button>
+            <table class="table table-bordered mt-4" id="userList">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Last Login</th>
+                        <th>User Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.ID</td>
+                            <td>@user.NAME @user.LAST_NAME</td>
+                            <td>@user.EMAIL</td>
+                            <td>@user.LAST_LOGIN</td>
+                            <td>@user.USER_TYPE</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- The Modal -->
+<div class="modal fade" id="userModal" tabindex="-1" role="dialog" aria-labelledby="userModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalLabel">User Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p><strong>ID:</strong> <span id="userId"></span></p>
+                <p><strong>Name:</strong> <span id="userName"></span></p>
+                <p><strong>Email:</strong> <span id="userEmail"></span></p>
+                <p><strong>Last Login:</strong> <span id="userLastLogin"></span></p>
+                <p><strong>User Type:</strong> <span id="userType"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>   
+</body>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.1.10/dist/sweetalert2.all.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var lastHighlightedRowId = null;
+
+        function attachRowClickEvent() {
+            $('#userList tbody tr').click(function () {
+                $('#userList tbody tr').removeClass('highlight');
+                $(this).addClass('highlight');
+                lastHighlightedRowId = $(this).attr('data-id');
+            });
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('#userList').length) {
+                    if (lastHighlightedRowId) {
+                        $('#userList tbody tr[data-id="' + lastHighlightedRowId + '"]').removeClass('highlight');
+                        lastHighlightedRowId = null;
+                    }
+                }
+            });
+        }
+
+        $('#userList tbody').on('click', 'tr', function () {
+            var userId = $(this).find('td:eq(0)').text();
+            var userName = $(this).find('td:eq(1)').text();
+            var userEmail = $(this).find('td:eq(2)').text();
+            var userLastLogin = $(this).find('td:eq(3)').text();
+            var userType = $(this).find('td:eq(4)').text();
+
+            // Gán dữ liệu vào modal
+            $('#userId').text(userId);
+            $('#userName').text(userName);
+            $('#userEmail').text(userEmail);
+            $('#userLastLogin').text(userLastLogin);
+            $('#userType').text(userType);
+        });
+
+        attachRowClickEvent();
+
+        $("#refreshBtn").click(function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Bạn có muốn làm mới danh sách không?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/Users/RefreshUserList',
+                        type: 'GET',
+                        success: function (response) {
+                            $("#userList").html(response);
+                            attachRowClickEvent();
+                            if (lastHighlightedRowId) {
+                                $('#userList tbody tr[data-id="' + lastHighlightedRowId + '"]').addClass('highlight');
+                            }
+                            Swal.fire('Success', 'Danh sách đã được cập nhật.', 'success');
+                        },
+                        error: function () {
+                            Swal.fire('Lỗi!', 'Có lỗi xảy ra khi làm mới danh sách.', 'error');
+                        }
+                    });
+                } else if (
+                    result.dismiss === Swal.DismissReason.cancel
+                ) {
+                    Swal.fire('Cancel', 'Danh sách không được làm mới', 'info');
+                }
+            });
+        });
+
+        $('#viewBtn').click(function () {
+            if (lastHighlightedRowId) {
+                $('#userModal').modal('show');
+            } else {
+                Swal.fire('Thông báo', 'Bạn chưa chọn user nào.', 'info');
+            }
+        });
+
+        // Đảm bảo rằng khi click vào bảng không bỏ chọn dòng
+        $('#userList').click(function (e) {
+            e.stopPropagation();
+        });
+        
+    });
+</script>
