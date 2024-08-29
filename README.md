@@ -2,6 +2,7 @@ Công nghệ sử dụng:
 - C# ASP.NET CORE, Bootstrap, JavaScript, jQuery
 - Các thư viện công cụ bổ sung: Postman, Ajax, SweetAlert
 - Các API và công cụ tích hợp: Bitrix API
+
 Logic chương trình:
 - Chương trình hiển thị danh sách user được lấy từ API
 - Nút Refresh: Khi click vào nút Refresh, chương trình sẽ xuất hiện một SweetAlert hỏi Bạn có muốn làm mới danh sách không, Click vào Yes chương trình sẽ làm mới danh sách(sử dụng ajax để làm mới bảng thông tin user mà không cần tải lại toàn bộ trang khiến cho trái nghiệm người dùng tốt hơn), Click vào Cancel để hủy.
